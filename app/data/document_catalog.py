@@ -2,7 +2,8 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Document:
+class DocumentChunk:
+    chunk_id: str
     document_id: str
     title: str
     category: str
@@ -11,8 +12,28 @@ class Document:
     keywords: tuple[str, ...]
 
 
-DOCUMENT_CATALOG: tuple[Document, ...] = (
-    Document(
+DOCUMENT_CATALOG: tuple[DocumentChunk, ...] = (
+    DocumentChunk(
+        chunk_id="it-password-policy-password-rotation",
+        document_id="it-password-policy",
+        title="IT Password Policy",
+        category="information-security",
+        answer=(
+            "Employees must rotate passwords every 90 days and immediately report "
+            "suspected account compromise to IT Security."
+        ),
+        citation_snippet="Employees must rotate passwords every 90 days.",
+        keywords=(
+            "password",
+            "passwords",
+            "rotation",
+            "rotate",
+            "90 days",
+            "credentials",
+        ),
+    ),
+    DocumentChunk(
+        chunk_id="it-password-policy-account-compromise",
         document_id="it-password-policy",
         title="IT Password Policy",
         category="information-security",
@@ -21,16 +42,11 @@ DOCUMENT_CATALOG: tuple[Document, ...] = (
             "suspected account compromise to IT Security."
         ),
         citation_snippet=(
-            "Employees must rotate passwords every 90 days. Employees who suspect "
-            "account compromise must immediately contact IT Security."
+            "Employees who suspect account compromise must immediately contact "
+            "IT Security."
         ),
         keywords=(
-            "password",
-            "passwords",
-            "rotation",
-            "rotate",
-            "90 days",
-            "credentials",
+            "account",
             "account compromise",
             "suspected account compromise",
             "suspect account compromise",
@@ -39,7 +55,8 @@ DOCUMENT_CATALOG: tuple[Document, ...] = (
             "it security",
         ),
     ),
-    Document(
+    DocumentChunk(
+        chunk_id="remote-work-policy-manager-approval",
         document_id="remote-work-policy",
         title="Remote Work Policy",
         category="workplace",
@@ -55,7 +72,8 @@ DOCUMENT_CATALOG: tuple[Document, ...] = (
             "recurring",
         ),
     ),
-    Document(
+    DocumentChunk(
+        chunk_id="expense-reimbursement-policy-receipts",
         document_id="expense-reimbursement-policy",
         title="Expense Reimbursement Policy",
         category="finance",
