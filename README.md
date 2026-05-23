@@ -2,7 +2,7 @@
 
 Small document retrieval API for answering employee questions from an included enterprise document catalog.
 
-The current version provides one FastAPI question-answering endpoint. It answers only from the included document catalog, returns citation snippets for supported answers, and uses consistent refusal behavior when the current document set does not support the question.
+v2 provides one FastAPI question-answering endpoint. It answers only from the included document catalog, searches chunk-level records, returns citation snippets with chunk identifiers for supported answers, and uses consistent refusal behavior when the current document set does not support the question.
 
 ## Quickstart
 
@@ -37,8 +37,9 @@ Response:
   "citations": [
     {
       "document_id": "it-password-policy",
+      "chunk_id": "it-password-policy-password-rotation",
       "title": "IT Password Policy",
-      "snippet": "Employees must rotate passwords every 90 days. Employees who suspect account compromise must immediately contact IT Security."
+      "snippet": "Employees must rotate passwords every 90 days."
     }
   ],
   "refusal_reason": null
@@ -62,8 +63,9 @@ curl -s -X POST http://127.0.0.1:8000/ask \
   "citations": [
     {
       "document_id": "it-password-policy",
+      "chunk_id": "it-password-policy-password-rotation",
       "title": "IT Password Policy",
-      "snippet": "Employees must rotate passwords every 90 days. Employees who suspect account compromise must immediately contact IT Security."
+      "snippet": "Employees must rotate passwords every 90 days."
     }
   ],
   "refusal_reason": null
@@ -89,8 +91,8 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 
 ## Current Limitations
 
-- The document catalog is hardcoded in `app/data/document_catalog.py`.
-- Retrieval is deterministic keyword matching, not semantic search.
+- The chunk-level document catalog is hardcoded in `app/data/document_catalog.py`.
+- Retrieval is deterministic keyword matching over chunks, not semantic search.
 - There are no LLM calls, embeddings, uploads, database, Docker setup, frontend, authentication, access control, audit logs, or cloud deployment.
 - Adding or changing included documents requires a code change.
 
@@ -111,3 +113,4 @@ pytest tests/test_ask.py
 ## Architecture Decision Records
 
 - [0001: v1 deterministic retrieval](docs/adr/0001-v1-deterministic-retrieval.md)
+- [0002: v2 document chunks](docs/adr/0002-v2-document-chunks.md)
