@@ -32,13 +32,13 @@ Response:
 
 ```json
 {
-  "answer": "string",
+  "answer": "Employees must rotate passwords every 90 days and immediately report suspected account compromise to IT Security.",
   "supported": true,
   "citations": [
     {
-      "document_id": "string",
-      "title": "string",
-      "snippet": "string"
+      "document_id": "it-password-policy",
+      "title": "IT Password Policy",
+      "snippet": "Employees must rotate passwords every 90 days. Employees who suspect account compromise must immediately contact IT Security."
     }
   ],
   "refusal_reason": null
