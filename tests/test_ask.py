@@ -35,11 +35,9 @@ async def test_supported_password_question_returns_answer_with_citation() -> Non
     assert body["citations"] == [
         {
             "document_id": "it-password-policy",
+            "chunk_id": "it-password-policy-password-rotation",
             "title": "IT Password Policy",
-            "snippet": (
-                "Employees must rotate passwords every 90 days. Employees who suspect "
-                "account compromise must immediately contact IT Security."
-            ),
+            "snippet": "Employees must rotate passwords every 90 days.",
         }
     ]
 
@@ -58,6 +56,7 @@ async def test_supported_account_compromise_question_returns_it_security_citatio
         "suspected account compromise to IT Security."
     )
     assert body["citations"][0]["document_id"] == "it-password-policy"
+    assert body["citations"][0]["chunk_id"] == "it-password-policy-account-compromise"
     assert body["citations"][0]["title"] == "IT Password Policy"
     assert "account compromise" in body["citations"][0]["snippet"]
     assert "contact IT Security" in body["citations"][0]["snippet"]
@@ -73,6 +72,7 @@ async def test_supported_remote_work_question_returns_policy_answer() -> None:
         "Recurring remote work requires manager approval before the arrangement begins."
     )
     assert body["citations"][0]["document_id"] == "remote-work-policy"
+    assert body["citations"][0]["chunk_id"] == "remote-work-policy-manager-approval"
 
 
 async def test_unsupported_question_returns_refusal() -> None:
@@ -119,6 +119,9 @@ async def test_retrieval_is_deterministic() -> None:
 
     assert responses[0] == responses[1] == responses[2]
     assert responses[0]["citations"][0]["document_id"] == "expense-reimbursement-policy"
+    assert responses[0]["citations"][0]["chunk_id"] == (
+        "expense-reimbursement-policy-receipts"
+    )
 
 
 async def test_response_shape_is_stable() -> None:

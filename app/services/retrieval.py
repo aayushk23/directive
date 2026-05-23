@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-from app.data.document_catalog import DOCUMENT_CATALOG, Document
+from app.data.document_catalog import DOCUMENT_CATALOG, DocumentChunk
 
 
 REFUSAL_ANSWER = "I cannot answer this question from the current document set."
@@ -11,34 +11,34 @@ MINIMUM_SUPPORT_SCORE = 2
 
 @dataclass(frozen=True)
 class RetrievalResult:
-    document: Document | None
+    chunk: DocumentChunk | None
 
     @property
     def supported(self) -> bool:
-        return self.document is not None
+        return self.chunk is not None
 
 
-def retrieve_supported_document(question: str) -> RetrievalResult:
+def retrieve_supported_chunk(question: str) -> RetrievalResult:
     normalized_question = _normalize(question)
-    scored_documents = (
-        (_score_document(normalized_question, document), index, document)
-        for index, document in enumerate(DOCUMENT_CATALOG)
+    scored_chunks = (
+        (_score_chunk(normalized_question, chunk), index, chunk)
+        for index, chunk in enumerate(DOCUMENT_CATALOG)
     )
 
-    best_score, _index, best_document = max(
-        scored_documents,
+    best_score, _index, best_chunk = max(
+        scored_chunks,
         key=lambda item: (item[0], -item[1]),
     )
 
     if best_score < MINIMUM_SUPPORT_SCORE:
-        return RetrievalResult(document=None)
+        return RetrievalResult(chunk=None)
 
-    return RetrievalResult(document=best_document)
+    return RetrievalResult(chunk=best_chunk)
 
 
-def _score_document(normalized_question: str, document: Document) -> int:
+def _score_chunk(normalized_question: str, chunk: DocumentChunk) -> int:
     score = 0
-    for keyword in document.keywords:
+    for keyword in chunk.keywords:
         normalized_keyword = _normalize(keyword)
         if " " in normalized_keyword:
             if normalized_keyword in normalized_question:

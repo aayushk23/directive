@@ -29,11 +29,11 @@ class Citation(BaseModel):
             "examples": [
                 {
                     "document_id": "it-password-policy",
+                    "chunk_id": "it-password-policy-account-compromise",
                     "title": "IT Password Policy",
                     "snippet": (
-                        "Employees must rotate passwords every 90 days. Employees "
-                        "who suspect account compromise must immediately contact "
-                        "IT Security."
+                        "Employees who suspect account compromise must immediately "
+                        "contact IT Security."
                     ),
                 }
             ]
@@ -41,6 +41,7 @@ class Citation(BaseModel):
     )
 
     document_id: str
+    chunk_id: str
     title: str
     snippet: str
 
@@ -59,9 +60,9 @@ class AskResponse(BaseModel):
                     "citations": [
                         {
                             "document_id": "it-password-policy",
+                            "chunk_id": "it-password-policy-account-compromise",
                             "title": "IT Password Policy",
                             "snippet": (
-                                "Employees must rotate passwords every 90 days. "
                                 "Employees who suspect account compromise must "
                                 "immediately contact IT Security."
                             ),
