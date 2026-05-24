@@ -27,10 +27,7 @@ async def test_supported_password_question_returns_answer_with_citation() -> Non
     assert response.status_code == 200
     body = response.json()
     assert body["supported"] is True
-    assert body["answer"] == (
-        "Employees must rotate passwords every 90 days and immediately report "
-        "suspected account compromise to IT Security."
-    )
+    assert body["answer"] == "Employees must rotate passwords every 90 days."
     assert body["refusal_reason"] is None
     assert body["citations"] == [
         {
@@ -52,8 +49,7 @@ async def test_supported_account_compromise_question_returns_it_security_citatio
     assert body["supported"] is True
     assert body["refusal_reason"] is None
     assert body["answer"] == (
-        "Employees must rotate passwords every 90 days and immediately report "
-        "suspected account compromise to IT Security."
+        "Employees who suspect account compromise must immediately contact IT Security."
     )
     assert body["citations"][0]["document_id"] == "it-password-policy"
     assert body["citations"][0]["chunk_id"] == "it-password-policy-account-compromise"
@@ -69,7 +65,7 @@ async def test_supported_remote_work_question_returns_policy_answer() -> None:
     body = response.json()
     assert body["supported"] is True
     assert body["answer"] == (
-        "Recurring remote work requires manager approval before the arrangement begins."
+        "Recurring remote work arrangements require manager approval before the arrangement begins."
     )
     assert body["citations"][0]["document_id"] == "remote-work-policy"
     assert body["citations"][0]["chunk_id"] == "remote-work-policy-manager-approval"
