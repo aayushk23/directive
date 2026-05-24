@@ -8,7 +8,7 @@ from app.services.retrieval import REFUSAL_ANSWER, REFUSAL_REASON, retrieve_supp
 
 app = FastAPI(
     title="Enterprise Policy Copilot API",
-    version="0.1.0",
+    version="0.4.0",
     description="Document retrieval API for answering questions from the current enterprise document set.",
     openapi_tags=[
         {
