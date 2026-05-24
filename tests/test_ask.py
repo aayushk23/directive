@@ -42,7 +42,9 @@ async def test_supported_password_question_returns_answer_with_citation() -> Non
     ]
 
 
-async def test_supported_account_compromise_question_returns_it_security_citation() -> None:
+async def test_supported_account_compromise_question_returns_it_security_citation() -> (
+    None
+):
     response = await post_ask(
         "What should employees do if they suspect account compromise"
     )
