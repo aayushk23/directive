@@ -2,7 +2,7 @@
 
 Small document retrieval API for answering employee questions from included local policy documents.
 
-v3 provides one FastAPI question-answering endpoint. It loads local Markdown or text files from `documents/`, converts them into chunks, searches chunks with deterministic keyword matching, returns citation snippets with chunk identifiers for supported answers, and uses consistent refusal behavior when the current document set does not support the question.
+The API provides one FastAPI question-answering endpoint. It loads local Markdown, text, or readable PDF files from `documents/`, converts them into chunks, searches chunks with deterministic keyword matching, returns citation snippets with chunk identifiers for supported answers, and uses consistent refusal behavior when the current document set does not support the question.
 
 ## Quickstart
 
@@ -50,7 +50,7 @@ For unsupported questions, `supported` is `false`, `citations` is an empty list,
 
 ## Local Documents
 
-Policy files live in `documents/` as `.md` or `.txt` files. Each file uses a small metadata header followed by `##` chunk headings:
+Policy files live in `documents/` as `.md`, `.txt`, or `.pdf` files. Each file uses a small metadata header followed by `##` chunk headings:
 
 ```md
 ---
@@ -65,6 +65,8 @@ Employees must rotate passwords every 90 days.
 ```
 
 Each `##` section becomes one document chunk. The chunk citation snippet and answer come from the first paragraph under that heading. Chunk IDs are derived from the document ID and heading, such as `it-password-policy-password-rotation`.
+
+PDF files must contain readable embedded text. The extracted PDF text uses the same metadata and `##` heading format as Markdown and text files. Scanned PDFs without extractable text are not supported.
 
 ## Supported Response
 
@@ -109,11 +111,12 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 
 ## Current Limitations
 
-- The document catalog is loaded from local `.md` and `.txt` files in `documents/`.
+- The document catalog is loaded from local `.md`, `.txt`, and readable `.pdf` files in `documents/`.
 - Local documents must include `document_id`, `title`, and `category` metadata and `##` chunk headings.
+- PDF ingestion extracts embedded text only; there is no OCR for scanned PDFs.
 - Retrieval is deterministic keyword matching over chunks, not semantic search.
 - There are no LLM calls, embeddings, uploads, database, Docker setup, frontend, authentication, access control, audit logs, or cloud deployment.
-- There is no PDF parsing or file upload endpoint.
+- There is no file upload endpoint.
 
 ## Development
 
@@ -134,3 +137,4 @@ pytest tests/test_ask.py
 - [0001: v1 deterministic retrieval](docs/adr/0001-v1-deterministic-retrieval.md)
 - [0002: v2 document chunks](docs/adr/0002-v2-document-chunks.md)
 - [0003: local document ingestion](docs/adr/0003-local-document-ingestion.md)
+- [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)

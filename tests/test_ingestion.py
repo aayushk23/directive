@@ -2,9 +2,11 @@ from pathlib import Path
 
 from app.services.ingestion import (
     chunk_local_document,
+    extract_pdf_text,
     load_document_catalog,
     load_local_document,
 )
+from tests.pdf_fixture import write_readable_pdf
 
 
 def write_document(source_file: Path, text: str) -> None:
@@ -87,3 +89,82 @@ Employees who suspect account compromise must immediately contact IT Security.
         "Employees who suspect account compromise must immediately contact IT Security."
     )
     assert "passwords" in document_chunks[0].keywords
+
+
+def test_extract_pdf_text_reads_embedded_text(tmp_path: Path) -> None:
+    source_file = tmp_path / "travel-security-policy.pdf"
+    write_readable_pdf(
+        source_file,
+        [
+            "---",
+            "document_id: travel-security-policy",
+            "title: Travel Security Policy",
+            "category: security",
+            "---",
+            "",
+            "## Device Handling",
+            "",
+            "Employees must keep company laptops with them during business travel.",
+        ],
+    )
+
+    pdf_text = extract_pdf_text(source_file)
+
+    assert "document_id: travel-security-policy" in pdf_text
+    assert "Employees must keep company laptops" in pdf_text
+
+
+def test_chunk_local_document_creates_chunks_from_pdf_text(tmp_path: Path) -> None:
+    source_file = tmp_path / "travel-security-policy.pdf"
+    write_readable_pdf(
+        source_file,
+        [
+            "---",
+            "document_id: travel-security-policy",
+            "title: Travel Security Policy",
+            "category: security",
+            "---",
+            "",
+            "## Device Handling",
+            "",
+            "Employees must keep company laptops with them during business travel.",
+        ],
+    )
+
+    local_document = load_local_document(source_file)
+    document_chunks = chunk_local_document(local_document)
+
+    assert local_document.document_id == "travel-security-policy"
+    assert local_document.title == "Travel Security Policy"
+    assert [chunk.chunk_id for chunk in document_chunks] == [
+        "travel-security-policy-device-handling"
+    ]
+    assert document_chunks[0].citation_snippet == (
+        "Employees must keep company laptops with them during business travel."
+    )
+    assert "laptops" in document_chunks[0].keywords
+
+
+def test_load_document_catalog_includes_pdf_documents(tmp_path: Path) -> None:
+    source_file = tmp_path / "travel-security-policy.pdf"
+    write_readable_pdf(
+        source_file,
+        [
+            "---",
+            "document_id: travel-security-policy",
+            "title: Travel Security Policy",
+            "category: security",
+            "---",
+            "",
+            "## Device Handling",
+            "",
+            "Employees must keep company laptops with them during business travel.",
+        ],
+    )
+
+    document_catalog = load_document_catalog(tmp_path)
+
+    assert [chunk.document_id for chunk in document_catalog] == [
+        "travel-security-policy"
+    ]
+    assert document_catalog[0].chunk_id == "travel-security-policy-device-handling"

@@ -2,7 +2,10 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
+from app.services import retrieval
+from app.services.ingestion import chunk_local_document, load_local_document
 from app.services.retrieval import REFUSAL_ANSWER, REFUSAL_REASON
+from tests.pdf_fixture import write_readable_pdf
 
 
 pytestmark = pytest.mark.anyio
@@ -69,6 +72,51 @@ async def test_supported_remote_work_question_returns_policy_answer() -> None:
     )
     assert body["citations"][0]["document_id"] == "remote-work-policy"
     assert body["citations"][0]["chunk_id"] == "remote-work-policy-manager-approval"
+
+
+async def test_supported_pdf_question_returns_answer_with_citation(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source_file = tmp_path / "travel-security-policy.pdf"
+    write_readable_pdf(
+        source_file,
+        [
+            "---",
+            "document_id: travel-security-policy",
+            "title: Travel Security Policy",
+            "category: security",
+            "---",
+            "",
+            "## Device Handling",
+            "",
+            "Employees must keep company laptops with them during business travel.",
+        ],
+    )
+    pdf_chunks = chunk_local_document(load_local_document(source_file))
+    monkeypatch.setattr(retrieval, "DOCUMENT_CATALOG", pdf_chunks)
+
+    response = await post_ask(
+        "How should employees handle laptops during business travel?"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["supported"] is True
+    assert body["answer"] == (
+        "Employees must keep company laptops with them during business travel."
+    )
+    assert body["refusal_reason"] is None
+    assert body["citations"] == [
+        {
+            "document_id": "travel-security-policy",
+            "chunk_id": "travel-security-policy-device-handling",
+            "title": "Travel Security Policy",
+            "snippet": (
+                "Employees must keep company laptops with them during business travel."
+            ),
+        }
+    ]
 
 
 async def test_unsupported_question_returns_refusal() -> None:
