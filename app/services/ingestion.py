@@ -2,9 +2,12 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
+
 
 DEFAULT_DOCUMENTS_PATH = Path(__file__).resolve().parents[2] / "documents"
-SUPPORTED_DOCUMENT_EXTENSIONS = {".md", ".txt"}
+SUPPORTED_DOCUMENT_EXTENSIONS = {".md", ".pdf", ".txt"}
 STOP_WORDS = {
     "a",
     "an",
@@ -61,7 +64,7 @@ def load_document_catalog(
 
 
 def load_local_document(source_file: Path) -> LocalDocument:
-    metadata, text = _parse_metadata(source_file)
+    metadata, text = _parse_local_document(source_file)
     return LocalDocument(
         document_id=metadata["document_id"],
         title=metadata["title"],
@@ -108,8 +111,29 @@ def _local_document_files(documents_path: Path) -> tuple[Path, ...]:
     )
 
 
-def _parse_metadata(source_file: Path) -> tuple[dict[str, str], str]:
-    content = source_file.read_text(encoding="utf-8")
+def extract_pdf_text(source_file: Path) -> str:
+    try:
+        pdf_reader = PdfReader(source_file)
+    except (OSError, PdfReadError) as exc:
+        raise ValueError(f"PDF document cannot be read: {source_file}") from exc
+
+    page_text = []
+    for page in pdf_reader.pages:
+        page_text.append(page.extract_text() or "")
+
+    pdf_text = "\n".join(page_text).strip()
+    if not pdf_text:
+        raise ValueError(f"PDF document has no readable text: {source_file}")
+
+    return pdf_text
+
+
+def _parse_local_document(source_file: Path) -> tuple[dict[str, str], str]:
+    if source_file.suffix.lower() == ".pdf":
+        content = extract_pdf_text(source_file)
+    else:
+        content = source_file.read_text(encoding="utf-8")
+
     if not content.startswith("---\n"):
         raise ValueError(f"document metadata is missing: {source_file}")
 
