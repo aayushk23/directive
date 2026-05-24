@@ -119,6 +119,29 @@ async def test_supported_pdf_question_returns_answer_with_citation(
     ]
 
 
+async def test_supported_runtime_pdf_question_returns_answer_with_citation() -> None:
+    response = await post_ask(
+        "What does the document say about security review for contracts?"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["supported"] is True
+    assert body["answer"] is not None
+    assert body["refusal_reason"] is None
+    assert body["citations"]
+
+    citation = body["citations"][0]
+    assert citation["document_id"] == "vendor-contract-security-review"
+    assert citation["chunk_id"] == (
+        "vendor-contract-security-review-contract-security-review"
+    )
+    assert (
+        "security review" in citation["snippet"]
+        or "customer data" in citation["snippet"]
+    )
+
+
 async def test_unsupported_question_returns_refusal() -> None:
     response = await post_ask("What is the company cafeteria menu today?")
 
@@ -194,7 +217,9 @@ async def test_openapi_uses_api_title() -> None:
         response = await client.get("/openapi.json")
 
     assert response.status_code == 200
-    assert response.json()["info"]["title"] == "Enterprise Policy Copilot API"
+    openapi_info = response.json()["info"]
+    assert openapi_info["title"] == "Enterprise Policy Copilot API"
+    assert openapi_info["version"] == "0.4.0"
 
 
 async def test_openapi_routes_use_explicit_tags() -> None:
