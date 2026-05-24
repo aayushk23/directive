@@ -132,9 +132,22 @@ Run focused endpoint tests:
 pytest tests/test_ask.py
 ```
 
+## Quality Checks
+
+Run the same checks used by CI:
+
+```bash
+ruff check .
+ruff format --check .
+python -m pytest -q
+bandit -r app/
+pip-audit
+```
+
 ## Architecture Decision Records
 
 - [0001: v1 deterministic retrieval](docs/adr/0001-v1-deterministic-retrieval.md)
 - [0002: v2 document chunks](docs/adr/0002-v2-document-chunks.md)
 - [0003: local document ingestion](docs/adr/0003-local-document-ingestion.md)
 - [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)
+- [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)

@@ -3,14 +3,9 @@ from pathlib import Path
 
 def write_readable_pdf(source_file: Path, lines: list[str]) -> None:
     text_commands = "\n".join(f"({_escape_pdf_text(line)}) Tj T*" for line in lines)
-    content_stream = (
-        "BT\n"
-        "/F1 12 Tf\n"
-        "72 720 Td\n"
-        "14 TL\n"
-        f"{text_commands}\n"
-        "ET\n"
-    ).encode("latin-1")
+    content_stream = (f"BT\n/F1 12 Tf\n72 720 Td\n14 TL\n{text_commands}\nET\n").encode(
+        "latin-1"
+    )
 
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
@@ -34,11 +29,7 @@ def write_readable_pdf(source_file: Path, lines: list[str]) -> None:
 
     for index, pdf_object in enumerate(objects, start=1):
         offsets.append(current_offset)
-        object_bytes = (
-            f"{index} 0 obj\n".encode("latin-1")
-            + pdf_object
-            + b"\nendobj\n"
-        )
+        object_bytes = f"{index} 0 obj\n".encode("latin-1") + pdf_object + b"\nendobj\n"
         pdf_parts.append(object_bytes)
         current_offset += len(object_bytes)
 
@@ -49,9 +40,7 @@ def write_readable_pdf(source_file: Path, lines: list[str]) -> None:
     trailer = (
         b"trailer\n"
         b"<< /Size 6 /Root 1 0 R >>\n"
-        b"startxref\n"
-        + str(xref_offset).encode("latin-1")
-        + b"\n%%EOF\n"
+        b"startxref\n" + str(xref_offset).encode("latin-1") + b"\n%%EOF\n"
     )
 
     source_file.write_bytes(b"".join(pdf_parts) + xref + trailer)
