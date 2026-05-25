@@ -9,9 +9,7 @@ ASK_REQUEST_EXAMPLE = {
 
 
 class AskRequest(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={"examples": [ASK_REQUEST_EXAMPLE]}
-    )
+    model_config = ConfigDict(json_schema_extra={"examples": [ASK_REQUEST_EXAMPLE]})
 
     question: Annotated[str, Field(min_length=1)]
 

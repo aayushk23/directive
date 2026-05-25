@@ -3,7 +3,11 @@ from typing import Annotated
 from fastapi import Body, FastAPI
 
 from app.models.ask import ASK_REQUEST_EXAMPLE, AskRequest, AskResponse, Citation
-from app.services.retrieval import REFUSAL_ANSWER, REFUSAL_REASON, retrieve_supported_chunk
+from app.services.retrieval import (
+    REFUSAL_ANSWER,
+    REFUSAL_REASON,
+    retrieve_supported_chunk,
+)
 
 
 app = FastAPI(
