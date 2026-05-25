@@ -149,17 +149,7 @@ bandit -r app/
 pip-audit
 ```
 
-## Current Limitations
-
-- The document catalog is loaded from local files in `documents/`.
-- Documents must include `document_id`, `title`, and `category` metadata.
-- Documents must use `##` headings for chunks.
-- PDF ingestion extracts embedded text only; scanned PDFs are not supported.
-- Retrieval is keyword based and does not use semantic search.
-- There is no file upload endpoint, database, Docker setup, frontend,
-  authentication, access control, audit logging, or cloud deployment setup.
-
-## ADRs
+## Architecture Decision Records
 
 - [0001: v1 deterministic retrieval](docs/adr/0001-v1-deterministic-retrieval.md)
 - [0002: v2 document chunks](docs/adr/0002-v2-document-chunks.md)
