@@ -1,7 +1,9 @@
 from typing import Annotated
 
-from fastapi import Body, FastAPI
+from fastapi import Body, Depends, FastAPI
+from psycopg import Connection
 
+from app.data.database import db_session
 from app.models.ask import ASK_REQUEST_EXAMPLE, AskRequest, AskResponse, Citation
 from app.services.retrieval import (
     REFUSAL_ANSWER,
@@ -12,7 +14,7 @@ from app.services.retrieval import (
 
 app = FastAPI(
     title="Enterprise Policy Copilot API",
-    version="0.4.0",
+    version="0.6.0",
     description="Document retrieval API for answering questions from the current enterprise document set.",
     openapi_tags=[
         {
@@ -52,8 +54,9 @@ async def health() -> dict[str, str]:
 )
 async def ask(
     request: Annotated[AskRequest, Body(examples=[ASK_REQUEST_EXAMPLE])],
+    connection: Annotated[Connection, Depends(db_session)],
 ) -> AskResponse:
-    retrieval_result = retrieve_supported_chunk(request.question)
+    retrieval_result = retrieve_supported_chunk(request.question, connection)
 
     if not retrieval_result.supported or retrieval_result.chunk is None:
         return AskResponse(

@@ -1,15 +1,19 @@
 [project]
 name = "enterprise-policy-copilot"
-version = "0.4.0"
+version = "0.6.0"
 description = "Document retrieval API for enterprise policy questions."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
     "pydantic>=2.8.0",
+    "psycopg[binary]>=3.2.0",
     "pypdf>=5.0.0",
     "uvicorn>=0.30.0",
 ]
+
+[project.scripts]
+policy-copilot-index-documents = "app.commands.index_documents:main"
 
 [project.optional-dependencies]
 dev = [

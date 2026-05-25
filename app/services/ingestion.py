@@ -37,6 +37,7 @@ class DocumentChunk:
     document_id: str
     title: str
     category: str
+    chunk_text: str
     answer: str
     citation_snippet: str
     keywords: tuple[str, ...]
@@ -56,7 +57,7 @@ def load_document_catalog(
 ) -> tuple[DocumentChunk, ...]:
     document_chunks: list[DocumentChunk] = []
 
-    for source_file in _local_document_files(documents_path):
+    for source_file in local_document_files(documents_path):
         local_document = load_local_document(source_file)
         document_chunks.extend(chunk_local_document(local_document))
 
@@ -88,6 +89,7 @@ def chunk_local_document(local_document: LocalDocument) -> tuple[DocumentChunk, 
                 document_id=local_document.document_id,
                 title=local_document.title,
                 category=local_document.category,
+                chunk_text=body,
                 answer=citation_snippet,
                 citation_snippet=citation_snippet,
                 keywords=keywords,
@@ -97,7 +99,7 @@ def chunk_local_document(local_document: LocalDocument) -> tuple[DocumentChunk, 
     return tuple(document_chunks)
 
 
-def _local_document_files(documents_path: Path) -> tuple[Path, ...]:
+def local_document_files(documents_path: Path) -> tuple[Path, ...]:
     if not documents_path.exists():
         raise ValueError(f"documents directory does not exist: {documents_path}")
 

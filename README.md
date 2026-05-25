@@ -1,12 +1,12 @@
 # Enterprise Policy & Document Copilot
 
-Small FastAPI service for answering employee policy questions from local documents.
+Small FastAPI service for answering employee policy questions from documents stored in Postgres.
 
-The current version loads Markdown, text, and readable PDF files from `documents/`,
-splits them into `##` sections, and answers `/ask` requests when a matching
-document chunk is found. Retrieval is deterministic keyword matching. Supported
-answers include a citation with the source document and chunk ID. Unsupported
-questions return a refusal response.
+The current version indexes local Markdown, text, and readable PDF files from `documents/`
+into Postgres tables for document records and document chunks. The `/ask` endpoint
+reads stored chunks from Postgres and uses deterministic keyword matching. Supported
+answers include a citation with `document_id`, `title`, `chunk_id`, and `snippet`.
+Unsupported questions return a refusal response.
 
 ## Local Setup
 
@@ -17,10 +17,34 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
+## Local Postgres Setup
+
+Start Postgres, create the local database, and point the app at it:
+
+```bash
+sudo service postgresql start
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+sudo -u postgres createdb policy_copilot
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot"
+```
+
+Create the schema and index local documents into Postgres:
+
+```bash
+python -m app.data.schema
+python -m app.commands.index_documents --documents-path documents
+```
+
+The installed console command is also available:
+
+```bash
+policy-copilot-index-documents --documents-path documents
+```
+
 ## Running the API
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 The API runs at `http://127.0.0.1:8000`.
@@ -58,7 +82,10 @@ Response:
 
 ## Local Documents
 
-Policy files live in `documents/` as `.md`, `.txt`, or `.pdf` files. Each file uses a small metadata header followed by `##` chunk headings:
+Policy files live in `documents/` as `.md`, `.txt`, or `.pdf` files. These files are
+indexing input; `/ask` reads the stored chunks from Postgres after indexing.
+
+Each file uses a small metadata header followed by `##` chunk headings:
 
 ```md
 ---
@@ -72,13 +99,12 @@ category: information-security
 Employees must rotate passwords every 90 days.
 ```
 
-Each `##` section becomes one document chunk. The chunk citation snippet and
-answer come from the first paragraph under that heading. Chunk IDs are derived
-from the document ID and heading, such as
-`it-password-policy-password-rotation`.
+Each `##` section becomes one stored document chunk. The chunk citation snippet and
+answer come from the first paragraph under that heading. Chunk IDs are derived from
+the document ID and heading, such as `it-password-policy-password-rotation`.
 
-PDF files must contain readable embedded text. The extracted PDF text uses the
-same metadata and `##` heading format as Markdown and text files.
+PDF files must contain readable embedded text. The extracted PDF text uses the same
+metadata and `##` heading format as Markdown and text files.
 
 ## Example `/ask` Requests
 
@@ -125,9 +151,10 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 
 ## Tests
 
-Run the test suite:
+Run the test suite with a test Postgres database:
 
 ```bash
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot_test"
 pytest
 ```
 
@@ -136,6 +163,8 @@ Run focused endpoint tests:
 ```bash
 pytest tests/test_ask.py
 ```
+
+Postgres-backed tests are skipped when `DATABASE_URL` is not set.
 
 ## Quality Checks
 
@@ -156,3 +185,4 @@ pip-audit
 - [0003: local document ingestion](docs/adr/0003-local-document-ingestion.md)
 - [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)
 - [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)
+- [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
