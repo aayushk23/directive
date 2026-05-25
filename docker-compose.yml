@@ -1,0 +1,29 @@
+services:
+  postgres_service:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: policy_copilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d policy_copilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api_service:
+    build: .
+    depends_on:
+      postgres_service:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres_service:5432/policy_copilot
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:

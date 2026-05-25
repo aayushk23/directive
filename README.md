@@ -8,6 +8,57 @@ reads stored chunks from Postgres and uses deterministic keyword matching. Suppo
 answers include a citation with `document_id`, `title`, `chunk_id`, and `snippet`.
 Unsupported questions return a refusal response.
 
+## Docker Compose Local Runtime
+
+Start Postgres:
+
+```bash
+docker compose up -d postgres_service
+```
+
+Create the schema and index local documents into Postgres:
+
+```bash
+docker compose run --rm api_service policy-copilot-index-documents --documents-path documents
+```
+
+Start the API:
+
+```bash
+docker compose up api_service
+```
+
+The API runs at `http://127.0.0.1:8000`.
+
+Check health:
+
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+
+Ask a supported question:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question":"What is the password rotation policy?"}'
+```
+
+The Compose app container uses:
+
+```text
+DATABASE_URL=postgresql://postgres:postgres@postgres_service:5432/policy_copilot
+```
+
+Postgres data is stored in the persistent `postgres_data` volume. Re-run the
+indexing command after changing files in `documents/`.
+
+Stop the services:
+
+```bash
+docker compose down
+```
+
 ## Local Setup
 
 ```bash
@@ -186,3 +237,4 @@ pip-audit
 - [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)
 - [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)
 - [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
+- [0007: Docker Compose local runtime](docs/adr/0007-docker-compose-local-runtime.md)
