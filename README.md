@@ -1,24 +1,34 @@
 # Enterprise Policy & Document Copilot
 
-Small document retrieval API for answering employee questions from included local policy documents.
+Small FastAPI service for answering employee policy questions from local documents.
 
-The API provides one FastAPI question-answering endpoint. It loads local Markdown, text, or readable PDF files from `documents/`, converts them into chunks, searches chunks with deterministic keyword matching, returns citation snippets with chunk identifiers for supported answers, and uses consistent refusal behavior when the current document set does not support the question.
+The current version loads Markdown, text, and readable PDF files from `documents/`,
+splits them into `##` sections, and answers `/ask` requests when a matching
+document chunk is found. Retrieval is deterministic keyword matching. Supported
+answers include a citation with the source document and chunk ID. Unsupported
+questions return a refusal response.
 
-## Quickstart
+## Local Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+```
+
+## Running the API
+
+```bash
 uvicorn app.main:app --reload
 ```
 
 The API runs at `http://127.0.0.1:8000`.
 
-## API Contract
+Available endpoints:
 
-### `POST /ask`
+- `GET /health`
+- `POST /ask`
 
 Request:
 
@@ -46,8 +56,6 @@ Response:
 }
 ```
 
-For unsupported questions, `supported` is `false`, `citations` is an empty list, and `answer` contains the refusal message.
-
 ## Local Documents
 
 Policy files live in `documents/` as `.md`, `.txt`, or `.pdf` files. Each file uses a small metadata header followed by `##` chunk headings:
@@ -64,11 +72,17 @@ category: information-security
 Employees must rotate passwords every 90 days.
 ```
 
-Each `##` section becomes one document chunk. The chunk citation snippet and answer come from the first paragraph under that heading. Chunk IDs are derived from the document ID and heading, such as `it-password-policy-password-rotation`.
+Each `##` section becomes one document chunk. The chunk citation snippet and
+answer come from the first paragraph under that heading. Chunk IDs are derived
+from the document ID and heading, such as
+`it-password-policy-password-rotation`.
 
-PDF files must contain readable embedded text. The extracted PDF text uses the same metadata and `##` heading format as Markdown and text files. Scanned PDFs without extractable text are not supported.
+PDF files must contain readable embedded text. The extracted PDF text uses the
+same metadata and `##` heading format as Markdown and text files.
 
-## Supported Response
+## Example `/ask` Requests
+
+Supported question:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/ask \
@@ -92,7 +106,7 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 }
 ```
 
-## Refusal Response
+Unsupported question:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/ask \
@@ -109,16 +123,7 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 }
 ```
 
-## Current Limitations
-
-- The document catalog is loaded from local `.md`, `.txt`, and readable `.pdf` files in `documents/`.
-- Local documents must include `document_id`, `title`, and `category` metadata and `##` chunk headings.
-- PDF ingestion extracts embedded text only; there is no OCR for scanned PDFs.
-- Retrieval is deterministic keyword matching over chunks, not semantic search.
-- There are no LLM calls, embeddings, uploads, database, Docker setup, frontend, authentication, access control, audit logs, or cloud deployment.
-- There is no file upload endpoint.
-
-## Development
+## Tests
 
 Run the test suite:
 
