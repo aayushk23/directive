@@ -8,6 +8,51 @@ reads stored chunks from Postgres and uses deterministic keyword matching. Suppo
 answers include a citation with `document_id`, `title`, `chunk_id`, and `snippet`.
 Unsupported questions return a refusal response.
 
+## Docker Compose Local Runtime
+
+Build and start the local runtime:
+
+```bash
+docker compose up --build
+```
+
+In a second terminal, index local documents into the runtime database:
+
+```bash
+docker compose run --rm api_service python -m app.commands.index_documents --documents-path documents
+```
+
+The API runs at `http://127.0.0.1:8000`.
+
+Check health:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Ask a supported question:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question":"What is the password rotation policy?"}'
+```
+
+The Compose app container uses the runtime database:
+
+```text
+DATABASE_URL=postgresql://postgres:postgres@postgres_service:5432/policy_copilot
+```
+
+Postgres data is stored in the persistent `postgres_data` volume. Re-run the
+indexing command after changing files in `documents/`.
+
+Stop the services:
+
+```bash
+docker compose down
+```
+
 ## Local Setup
 
 ```bash
@@ -27,6 +72,8 @@ sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
 sudo -u postgres createdb policy_copilot
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot"
 ```
+
+This `DATABASE_URL` is for running the app locally against the runtime database.
 
 Create the schema and index local documents into Postgres:
 
@@ -149,34 +196,34 @@ curl -s -X POST http://127.0.0.1:8000/ask \
 }
 ```
 
-## Tests
-
-Run the test suite with a test Postgres database:
-
-```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot_test"
-pytest
-```
-
-Run focused endpoint tests:
-
-```bash
-pytest tests/test_ask.py
-```
-
-Postgres-backed tests are skipped when `DATABASE_URL` is not set.
-
 ## Quality Checks
 
-Run the same checks used by CI:
+Run quick local checks:
 
 ```bash
-ruff check .
-ruff format --check .
+python -m ruff check .
+python -m ruff format --check .
 python -m pytest -q
-bandit -r app/
-pip-audit
+python -m bandit -q -r app
+python -m pip_audit --skip-editable
 ```
+
+`python -m pytest -q` is a quick local check. It may skip database-backed tests
+when `DATABASE_URL` is not set.
+
+### Test Database
+
+Run the full database-backed test suite against a dedicated test database:
+
+```bash
+docker compose up -d postgres_service
+docker compose exec postgres_service dropdb -U postgres --if-exists policy_copilot_test
+docker compose exec postgres_service createdb -U postgres policy_copilot_test
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot_test" python -m pytest -q -rs
+```
+
+Use `policy_copilot_test` for full database-backed tests. Do not run tests
+against the `policy_copilot` runtime database.
 
 ## Architecture Decision Records
 
@@ -186,3 +233,4 @@ pip-audit
 - [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)
 - [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)
 - [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
+- [0007: Docker Compose local runtime](docs/adr/0007-docker-compose-local-runtime.md)

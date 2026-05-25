@@ -1,0 +1,9 @@
+.git
+.*
+!.dockerignore
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+enterprise_policy_copilot.egg-info/
