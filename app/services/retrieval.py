@@ -1,7 +1,10 @@
 import re
 from dataclasses import dataclass
 
-from app.data.document_catalog import DOCUMENT_CATALOG, DocumentChunk
+from psycopg import Connection
+
+from app.data.document_store import load_document_chunks
+from app.services.ingestion import DocumentChunk
 
 
 REFUSAL_ANSWER = "I cannot answer this question from the current document set."
@@ -18,11 +21,15 @@ class RetrievalResult:
         return self.chunk is not None
 
 
-def retrieve_supported_chunk(question: str) -> RetrievalResult:
+def retrieve_supported_chunk(question: str, connection: Connection) -> RetrievalResult:
     normalized_question = _normalize(question)
+    document_chunks = load_document_chunks(connection)
+    if not document_chunks:
+        return RetrievalResult(chunk=None)
+
     scored_chunks = (
         (_score_chunk(normalized_question, chunk), index, chunk)
-        for index, chunk in enumerate(DOCUMENT_CATALOG)
+        for index, chunk in enumerate(document_chunks)
     )
 
     best_score, _index, best_chunk = max(

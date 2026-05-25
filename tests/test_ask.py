@@ -1,9 +1,9 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
+from psycopg import Connection
 
+from app.commands.index_documents import index_documents
 from app.main import app
-from app.services import retrieval
-from app.services.ingestion import chunk_local_document, load_local_document
 from app.services.retrieval import REFUSAL_ANSWER, REFUSAL_REASON
 from tests.pdf_fixture import write_readable_pdf
 
@@ -14,6 +14,11 @@ pytestmark = pytest.mark.anyio
 @pytest.fixture
 def anyio_backend() -> str:
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def indexed_default_documents(app_db_session: Connection) -> None:
+    index_documents()
 
 
 async def post_ask(question: str):
@@ -78,7 +83,6 @@ async def test_supported_remote_work_question_returns_policy_answer() -> None:
 
 async def test_supported_pdf_question_returns_answer_with_citation(
     tmp_path,
-    monkeypatch,
 ) -> None:
     source_file = tmp_path / "travel-security-policy.pdf"
     write_readable_pdf(
@@ -95,8 +99,7 @@ async def test_supported_pdf_question_returns_answer_with_citation(
             "Employees must keep company laptops with them during business travel.",
         ],
     )
-    pdf_chunks = chunk_local_document(load_local_document(source_file))
-    monkeypatch.setattr(retrieval, "DOCUMENT_CATALOG", pdf_chunks)
+    index_documents(tmp_path)
 
     response = await post_ask(
         "How should employees handle laptops during business travel?"
@@ -221,7 +224,7 @@ async def test_openapi_uses_api_title() -> None:
     assert response.status_code == 200
     openapi_info = response.json()["info"]
     assert openapi_info["title"] == "Enterprise Policy Copilot API"
-    assert openapi_info["version"] == "0.4.0"
+    assert openapi_info["version"] == "0.6.0"
 
 
 async def test_openapi_routes_use_explicit_tags() -> None:
