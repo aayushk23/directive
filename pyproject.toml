@@ -1,11 +1,11 @@
 [project]
 name = "enterprise-policy-copilot"
-version = "0.7.0"
+version = "0.8.0"
 description = "Document retrieval API for enterprise policy questions."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi>=0.115.0,!=0.136.3",
     "pydantic>=2.8.0",
     "psycopg[binary]>=3.2.0",
     "pypdf>=5.0.0",

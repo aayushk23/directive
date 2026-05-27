@@ -2,11 +2,17 @@
 
 Small FastAPI service for answering employee policy questions from documents stored in Postgres.
 
-The current version indexes local Markdown, text, and readable PDF files from `documents/`
-into Postgres tables for document records and document chunks. The `/ask` endpoint
-reads stored chunks from Postgres and uses deterministic keyword matching. Supported
-answers include a citation with `document_id`, `title`, `chunk_id`, and `snippet`.
-Unsupported questions return a refusal response.
+The current version indexes local Markdown, text, and readable PDF files from
+`documents/` into Postgres tables for document records and document chunks. Each
+stored chunk includes a deterministic local embedding vector for pgvector-backed
+retrieval. The `/ask` endpoint reads stored chunks from Postgres, uses vector
+retrieval with deterministic keyword matching as a fallback, and returns answers
+only when the stored document set supports the question.
+
+Supported answers include a citation with `document_id`, `title`, `chunk_id`, and
+`snippet`. Unsupported questions return a refusal response. The local embedding
+provider is deterministic and dependency-free; it is not an external model
+embedding service.
 
 ## Docker Compose Local Runtime
 
@@ -44,8 +50,9 @@ The Compose app container uses the runtime database:
 DATABASE_URL=postgresql://postgres:postgres@postgres_service:5432/policy_copilot
 ```
 
-Postgres data is stored in the persistent `postgres_data` volume. Re-run the
-indexing command after changing files in `documents/`.
+In v0.8.0, the Compose Postgres service uses a pgvector-enabled image. Postgres
+data is stored in the persistent `postgres_data` volume. Re-run the indexing
+command after changing files in `documents/`.
 
 Stop the services:
 
@@ -64,7 +71,8 @@ python -m pip install -e ".[dev]"
 
 ## Local Postgres Setup
 
-Start Postgres, create the local database, and point the app at it:
+Start a local Postgres that has pgvector installed, create the local database,
+and point the app at it:
 
 ```bash
 sudo service postgresql start
@@ -74,6 +82,9 @@ export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilo
 ```
 
 This `DATABASE_URL` is for running the app locally against the runtime database.
+The database must have the pgvector extension available because schema creation
+enables `vector` and stores `chunk_embedding` values. The Docker Compose runtime
+above is the simplest pgvector-enabled local setup.
 
 Create the schema and index local documents into Postgres:
 
@@ -146,9 +157,11 @@ category: information-security
 Employees must rotate passwords every 90 days.
 ```
 
-Each `##` section becomes one stored document chunk. The chunk citation snippet and
-answer come from the first paragraph under that heading. Chunk IDs are derived from
-the document ID and heading, such as `it-password-policy-password-rotation`.
+Each `##` section becomes one stored document chunk. The chunk citation snippet
+and answer come from the first paragraph under that heading. Chunk IDs are
+derived from the document ID and heading, such as
+`it-password-policy-password-rotation`. The indexing command also stores a
+`chunk_embedding` vector for each chunk.
 
 PDF files must contain readable embedded text. The extracted PDF text uses the same
 metadata and `##` heading format as Markdown and text files.
@@ -223,7 +236,8 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot_test"
 ```
 
 Use `policy_copilot_test` for full database-backed tests. Do not run tests
-against the `policy_copilot` runtime database.
+against the `policy_copilot` runtime database. The Compose `postgres_service`
+container includes pgvector for these tests.
 
 ## Architecture Decision Records
 
@@ -234,3 +248,4 @@ against the `policy_copilot` runtime database.
 - [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)
 - [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
 - [0007: Docker Compose local runtime](docs/adr/0007-docker-compose-local-runtime.md)
+- [0008: pgvector semantic retrieval](docs/adr/0008-pgvector-semantic-retrieval.md)

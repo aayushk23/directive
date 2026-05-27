@@ -4,6 +4,8 @@ from app.data.database import connect
 
 
 SCHEMA_SQL = """
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE IF NOT EXISTS documents (
     document_id text PRIMARY KEY,
     title text NOT NULL,
@@ -20,8 +22,12 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     answer text NOT NULL,
     citation_snippet text NOT NULL,
     keywords text[] NOT NULL,
+    chunk_embedding vector(64),
     UNIQUE (document_id, chunk_index)
 );
+
+ALTER TABLE document_chunks
+    ADD COLUMN IF NOT EXISTS chunk_embedding vector(64);
 
 CREATE INDEX IF NOT EXISTS document_chunks_document_id_idx
     ON document_chunks (document_id);
