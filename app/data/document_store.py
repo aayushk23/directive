@@ -1,5 +1,6 @@
 from psycopg import Connection
 
+from app.services.embedding_provider import vector_literal
 from app.services.ingestion import DocumentChunk, LocalDocument
 
 
@@ -7,6 +8,7 @@ def replace_document_chunks(
     connection: Connection,
     document_record: LocalDocument,
     document_chunks: tuple[DocumentChunk, ...],
+    chunk_embeddings: dict[str, tuple[float, ...]] | None = None,
 ) -> None:
     connection.execute(
         """
@@ -40,9 +42,10 @@ def replace_document_chunks(
                 chunk_text,
                 answer,
                 citation_snippet,
-                keywords
+                keywords,
+                chunk_embedding
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s::vector)
             """,
             (
                 document_chunk.chunk_id,
@@ -52,6 +55,7 @@ def replace_document_chunks(
                 document_chunk.answer,
                 document_chunk.citation_snippet,
                 list(document_chunk.keywords),
+                _chunk_embedding_literal(document_chunk, chunk_embeddings),
             ),
         )
 
@@ -87,3 +91,17 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
         )
         for row in rows
     )
+
+
+def _chunk_embedding_literal(
+    document_chunk: DocumentChunk,
+    chunk_embeddings: dict[str, tuple[float, ...]] | None,
+) -> str | None:
+    if chunk_embeddings is None:
+        return None
+
+    chunk_embedding = chunk_embeddings.get(document_chunk.chunk_id)
+    if chunk_embedding is None or not any(chunk_embedding):
+        return None
+
+    return vector_literal(chunk_embedding)

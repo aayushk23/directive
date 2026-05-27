@@ -7,12 +7,20 @@ from app.data.schema import create_schema
 from app.services.ingestion import DEFAULT_DOCUMENTS_PATH, chunk_local_document
 from app.services.ingestion import local_document_files
 from app.services.ingestion import load_local_document
+from app.services.embedding_provider import (
+    EmbeddingProvider,
+    LocalHashEmbeddingProvider,
+    embedding_input_for_chunk,
+)
 
 
 def index_documents(
     documents_path: Path = DEFAULT_DOCUMENTS_PATH,
     database_url: str | None = None,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> tuple[int, int]:
+    provider = embedding_provider or LocalHashEmbeddingProvider()
+
     with connect(database_url) as connection:
         create_schema(connection)
         document_count = 0
@@ -21,7 +29,22 @@ def index_documents(
         for source_file in local_document_files(documents_path):
             document_record = load_local_document(source_file)
             document_chunks = chunk_local_document(document_record)
-            replace_document_chunks(connection, document_record, document_chunks)
+            chunk_embeddings = {
+                document_chunk.chunk_id: provider.embed_text(
+                    embedding_input_for_chunk(
+                        document_chunk.title,
+                        document_chunk.chunk_text,
+                        document_chunk.keywords,
+                    )
+                )
+                for document_chunk in document_chunks
+            }
+            replace_document_chunks(
+                connection,
+                document_record,
+                document_chunks,
+                chunk_embeddings,
+            )
             document_count += 1
             chunk_count += len(document_chunks)
 

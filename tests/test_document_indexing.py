@@ -36,7 +36,12 @@ Recurring remote work arrangements require manager approval.
     ).fetchone()
     stored_chunk = postgres_connection.execute(
         """
-        SELECT chunk_id, chunk_text, citation_snippet, keywords
+        SELECT
+            chunk_id,
+            chunk_text,
+            citation_snippet,
+            keywords,
+            vector_dims(chunk_embedding)
         FROM document_chunks
         """
     ).fetchone()
@@ -57,3 +62,4 @@ Recurring remote work arrangements require manager approval.
         == "Recurring remote work arrangements require manager approval."
     )
     assert "remote" in stored_chunk[3]
+    assert stored_chunk[4] == 64
