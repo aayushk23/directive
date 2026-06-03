@@ -12,11 +12,23 @@ def replace_document_chunks(
 ) -> None:
     connection.execute(
         """
-        INSERT INTO documents (document_id, title, category, source_file, indexed_at)
-        VALUES (%s, %s, %s, %s, now())
+        INSERT INTO documents (
+            document_id,
+            title,
+            category,
+            owner,
+            source_date,
+            document_version,
+            source_file,
+            indexed_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, now())
         ON CONFLICT (document_id) DO UPDATE
         SET title = EXCLUDED.title,
             category = EXCLUDED.category,
+            owner = EXCLUDED.owner,
+            source_date = EXCLUDED.source_date,
+            document_version = EXCLUDED.document_version,
             source_file = EXCLUDED.source_file,
             indexed_at = EXCLUDED.indexed_at
         """,
@@ -24,6 +36,9 @@ def replace_document_chunks(
             document_record.document_id,
             document_record.title,
             document_record.category,
+            document_record.owner,
+            document_record.source_date,
+            document_record.document_version,
             str(document_record.source_file),
         ),
     )
@@ -68,6 +83,9 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
             d.document_id,
             d.title,
             d.category,
+            d.owner,
+            d.source_date,
+            d.document_version,
             c.chunk_text,
             c.answer,
             c.citation_snippet,
@@ -84,10 +102,13 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
             document_id=row[1],
             title=row[2],
             category=row[3],
-            chunk_text=row[4],
-            answer=row[5],
-            citation_snippet=row[6],
-            keywords=tuple(row[7]),
+            owner=row[4],
+            source_date=row[5],
+            document_version=row[6],
+            chunk_text=row[7],
+            answer=row[8],
+            citation_snippet=row[9],
+            keywords=tuple(row[10]),
         )
         for row in rows
     )

@@ -19,6 +19,9 @@ def test_index_documents_stores_local_files_as_chunks(
 document_id: remote-work-policy
 title: Remote Work Policy
 category: workplace
+owner: People Operations
+source_date: 2026-01-15
+document_version: 2026.1
 ---
 
 ## Manager Approval
@@ -30,7 +33,14 @@ Recurring remote work arrangements require manager approval.
 
     stored_document = postgres_connection.execute(
         """
-        SELECT document_id, title, category, source_file
+        SELECT
+            document_id,
+            title,
+            category,
+            owner,
+            source_date,
+            document_version,
+            source_file
         FROM documents
         """
     ).fetchone()
@@ -51,7 +61,10 @@ Recurring remote work arrangements require manager approval.
     assert stored_document[0] == "remote-work-policy"
     assert stored_document[1] == "Remote Work Policy"
     assert stored_document[2] == "workplace"
-    assert stored_document[3].endswith("remote-work-policy.md")
+    assert stored_document[3] == "People Operations"
+    assert stored_document[4] == "2026-01-15"
+    assert stored_document[5] == "2026.1"
+    assert stored_document[6].endswith("remote-work-policy.md")
     assert stored_chunk[0] == "remote-work-policy-manager-approval"
     assert (
         stored_chunk[1]

@@ -22,6 +22,9 @@ def test_load_document_catalog_reads_local_markdown_and_text_documents(
 document_id: remote-work-policy
 title: Remote Work Policy
 category: workplace
+owner: People Operations
+source_date: 2026-01-15
+document_version: 2026.1
 ---
 
 ## Manager Approval
@@ -53,6 +56,9 @@ Employees must provide receipts for reimbursable expenses over $25.
     assert document_catalog[0].category == "finance"
     assert document_catalog[0].chunk_id == "expense-reimbursement-policy-receipts"
     assert document_catalog[1].chunk_id == "remote-work-policy-manager-approval"
+    assert document_catalog[1].owner == "People Operations"
+    assert document_catalog[1].source_date == "2026-01-15"
+    assert document_catalog[1].document_version == "2026.1"
 
 
 def test_chunk_local_document_creates_chunks_from_headings(tmp_path: Path) -> None:

@@ -29,6 +29,10 @@ class Citation(BaseModel):
                     "document_id": "it-password-policy",
                     "chunk_id": "it-password-policy-account-compromise",
                     "title": "IT Password Policy",
+                    "category": "information-security",
+                    "owner": "IT Security",
+                    "source_date": "2026-01-15",
+                    "document_version": "2026.1",
                     "snippet": (
                         "Employees who suspect account compromise must immediately "
                         "contact IT Security."
@@ -41,6 +45,10 @@ class Citation(BaseModel):
     document_id: str
     chunk_id: str
     title: str
+    category: str
+    owner: str | None = None
+    source_date: str | None = None
+    document_version: str | None = None
     snippet: str
 
 
@@ -60,6 +68,10 @@ class AskResponse(BaseModel):
                             "document_id": "it-password-policy",
                             "chunk_id": "it-password-policy-account-compromise",
                             "title": "IT Password Policy",
+                            "category": "information-security",
+                            "owner": "IT Security",
+                            "source_date": "2026-01-15",
+                            "document_version": "2026.1",
                             "snippet": (
                                 "Employees who suspect account compromise must "
                                 "immediately contact IT Security."

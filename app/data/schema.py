@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS documents (
     document_id text PRIMARY KEY,
     title text NOT NULL,
     category text NOT NULL,
+    owner text,
+    source_date text,
+    document_version text,
     source_file text NOT NULL,
     indexed_at timestamptz NOT NULL DEFAULT now()
 );
@@ -28,6 +31,15 @@ CREATE TABLE IF NOT EXISTS document_chunks (
 
 ALTER TABLE document_chunks
     ADD COLUMN IF NOT EXISTS chunk_embedding vector(64);
+
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS owner text;
+
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS source_date text;
+
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS document_version text;
 
 CREATE INDEX IF NOT EXISTS document_chunks_document_id_idx
     ON document_chunks (document_id);

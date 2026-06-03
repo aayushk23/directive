@@ -37,6 +37,9 @@ class DocumentChunk:
     document_id: str
     title: str
     category: str
+    owner: str | None
+    source_date: str | None
+    document_version: str | None
     chunk_text: str
     answer: str
     citation_snippet: str
@@ -48,6 +51,9 @@ class LocalDocument:
     document_id: str
     title: str
     category: str
+    owner: str | None
+    source_date: str | None
+    document_version: str | None
     source_file: Path
     text: str
 
@@ -70,6 +76,9 @@ def load_local_document(source_file: Path) -> LocalDocument:
         document_id=metadata["document_id"],
         title=metadata["title"],
         category=metadata["category"],
+        owner=metadata.get("owner"),
+        source_date=metadata.get("source_date"),
+        document_version=metadata.get("document_version"),
         source_file=source_file,
         text=text,
     )
@@ -89,6 +98,9 @@ def chunk_local_document(local_document: LocalDocument) -> tuple[DocumentChunk, 
                 document_id=local_document.document_id,
                 title=local_document.title,
                 category=local_document.category,
+                owner=local_document.owner,
+                source_date=local_document.source_date,
+                document_version=local_document.document_version,
                 chunk_text=body,
                 answer=citation_snippet,
                 citation_snippet=citation_snippet,
