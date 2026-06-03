@@ -82,6 +82,9 @@ def _retrieve_vector_supported_chunk(
             d.document_id,
             d.title,
             d.category,
+            d.owner,
+            d.source_date,
+            d.document_version,
             c.chunk_text,
             c.answer,
             c.citation_snippet,
@@ -101,7 +104,7 @@ def _retrieve_vector_supported_chunk(
         ),
     ).fetchone()
 
-    if row is None or not math.isfinite(row[8]) or row[8] < MINIMUM_VECTOR_SIMILARITY:
+    if row is None or not math.isfinite(row[11]) or row[11] < MINIMUM_VECTOR_SIMILARITY:
         return RetrievalResult(chunk=None)
 
     return RetrievalResult(
@@ -110,10 +113,13 @@ def _retrieve_vector_supported_chunk(
             document_id=row[1],
             title=row[2],
             category=row[3],
-            chunk_text=row[4],
-            answer=row[5],
-            citation_snippet=row[6],
-            keywords=tuple(row[7]),
+            owner=row[4],
+            source_date=row[5],
+            document_version=row[6],
+            chunk_text=row[7],
+            answer=row[8],
+            citation_snippet=row[9],
+            keywords=tuple(row[10]),
         )
     )
 

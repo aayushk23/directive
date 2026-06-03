@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Body, Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from psycopg import Connection
 
 from app.data.database import db_session
@@ -14,7 +15,7 @@ from app.services.retrieval import (
 
 app = FastAPI(
     title="Enterprise Policy Copilot API",
-    version="0.8.0",
+    version="0.9.0",
     description="Document retrieval API for answering questions from the current enterprise document set.",
     openapi_tags=[
         {
@@ -26,6 +27,13 @@ app = FastAPI(
             "description": "Operational endpoints for API availability.",
         },
     ],
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -75,6 +83,10 @@ async def ask(
                 document_id=chunk.document_id,
                 chunk_id=chunk.chunk_id,
                 title=chunk.title,
+                category=chunk.category,
+                owner=chunk.owner,
+                source_date=chunk.source_date,
+                document_version=chunk.document_version,
                 snippet=chunk.citation_snippet,
             )
         ],

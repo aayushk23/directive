@@ -42,6 +42,10 @@ async def test_supported_password_question_returns_answer_with_citation() -> Non
             "document_id": "it-password-policy",
             "chunk_id": "it-password-policy-password-rotation",
             "title": "IT Password Policy",
+            "category": "information-security",
+            "owner": "IT Security",
+            "source_date": "2026-01-15",
+            "document_version": "2026.1",
             "snippet": "Employees must rotate passwords every 90 days.",
         }
     ]
@@ -64,6 +68,9 @@ async def test_supported_account_compromise_question_returns_it_security_citatio
     assert body["citations"][0]["document_id"] == "it-password-policy"
     assert body["citations"][0]["chunk_id"] == "it-password-policy-account-compromise"
     assert body["citations"][0]["title"] == "IT Password Policy"
+    assert body["citations"][0]["owner"] == "IT Security"
+    assert body["citations"][0]["source_date"] == "2026-01-15"
+    assert body["citations"][0]["document_version"] == "2026.1"
     assert "account compromise" in body["citations"][0]["snippet"]
     assert "contact IT Security" in body["citations"][0]["snippet"]
 
@@ -117,6 +124,10 @@ async def test_supported_pdf_question_returns_answer_with_citation(
             "document_id": "travel-security-policy",
             "chunk_id": "travel-security-policy-device-handling",
             "title": "Travel Security Policy",
+            "category": "security",
+            "owner": None,
+            "source_date": None,
+            "document_version": None,
             "snippet": (
                 "Employees must keep company laptops with them during business travel."
             ),
@@ -206,6 +217,16 @@ async def test_response_shape_is_stable() -> None:
         "citations",
         "refusal_reason",
     }
+    assert set(response.json()["citations"][0].keys()) == {
+        "document_id",
+        "chunk_id",
+        "title",
+        "category",
+        "owner",
+        "source_date",
+        "document_version",
+        "snippet",
+    }
 
 
 async def test_blank_question_is_rejected() -> None:
@@ -224,7 +245,7 @@ async def test_openapi_uses_api_title() -> None:
     assert response.status_code == 200
     openapi_info = response.json()["info"]
     assert openapi_info["title"] == "Enterprise Policy Copilot API"
-    assert openapi_info["version"] == "0.8.0"
+    assert openapi_info["version"] == "0.9.0"
 
 
 async def test_openapi_routes_use_explicit_tags() -> None:

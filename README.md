@@ -2,17 +2,19 @@
 
 Small FastAPI service for answering employee policy questions from documents stored in Postgres.
 
-The current version indexes local Markdown, text, and readable PDF files from
-`documents/` into Postgres tables for document records and document chunks. Each
-stored chunk includes a deterministic local embedding vector for pgvector-backed
-retrieval. The `/ask` endpoint reads stored chunks from Postgres, uses vector
-retrieval with deterministic keyword matching as a fallback, and returns answers
-only when the stored document set supports the question.
+v0.9.0 indexes local Markdown, text, and readable PDF files from `documents/`
+into Postgres tables for document records and document chunks. Each stored chunk
+includes a deterministic local embedding vector for pgvector-backed retrieval.
+The `/ask` endpoint reads stored chunks from Postgres, uses vector retrieval
+with deterministic keyword matching as a fallback, and returns answers only when
+the stored document set supports the question.
 
-Supported answers include a citation with `document_id`, `title`, `chunk_id`, and
-`snippet`. Unsupported questions return a refusal response. The local embedding
-provider is deterministic and dependency-free; it is not an external model
-embedding service.
+Supported answers include citations with `document_id`, `title`, `chunk_id`,
+`category`, optional provenance metadata, and `snippet`. Unsupported questions
+return a refusal response. The React/Vite frontend in `frontend/` provides the
+browser UI for asking questions against `/ask`. The local embedding provider is
+deterministic and dependency-free; it is not an external model embedding
+service.
 
 ## Docker Compose Local Runtime
 
@@ -50,7 +52,7 @@ The Compose app container uses the runtime database:
 DATABASE_URL=postgresql://postgres:postgres@postgres_service:5432/policy_copilot
 ```
 
-In v0.8.0, the Compose Postgres service uses a pgvector-enabled image. Postgres
+In v0.9.0, the Compose Postgres service uses a pgvector-enabled image. Postgres
 data is stored in the persistent `postgres_data` volume. Re-run the indexing
 command after changing files in `documents/`.
 
@@ -112,6 +114,33 @@ Available endpoints:
 - `GET /health`
 - `POST /ask`
 
+## Frontend Development
+
+The browser UI lives in `frontend/` and uses Vite, React, TypeScript, and
+Tailwind.
+
+Install frontend dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+Run the frontend dev server while FastAPI is running on port 8000:
+
+```bash
+npm run dev
+```
+
+The Vite dev server proxies `/ask` and `/health` to `http://127.0.0.1:8000`.
+Set `VITE_API_BASE_URL` only if the API is running somewhere else.
+
+Build static frontend assets:
+
+```bash
+npm run build
+```
+
 Request:
 
 ```json
@@ -131,6 +160,10 @@ Response:
       "document_id": "it-password-policy",
       "chunk_id": "it-password-policy-password-rotation",
       "title": "IT Password Policy",
+      "category": "information-security",
+      "owner": "IT Security",
+      "source_date": "2026-01-15",
+      "document_version": "2026.1",
       "snippet": "Employees must rotate passwords every 90 days."
     }
   ],
@@ -150,6 +183,9 @@ Each file uses a small metadata header followed by `##` chunk headings:
 document_id: it-password-policy
 title: IT Password Policy
 category: information-security
+owner: IT Security
+source_date: 2026-01-15
+document_version: 2026.1
 ---
 
 ## Password Rotation
@@ -185,6 +221,10 @@ curl -s -X POST http://127.0.0.1:8000/ask \
       "document_id": "it-password-policy",
       "chunk_id": "it-password-policy-password-rotation",
       "title": "IT Password Policy",
+      "category": "information-security",
+      "owner": "IT Security",
+      "source_date": "2026-01-15",
+      "document_version": "2026.1",
       "snippet": "Employees must rotate passwords every 90 days."
     }
   ],
@@ -249,3 +289,4 @@ container includes pgvector for these tests.
 - [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
 - [0007: Docker Compose local runtime](docs/adr/0007-docker-compose-local-runtime.md)
 - [0008: pgvector semantic retrieval](docs/adr/0008-pgvector-semantic-retrieval.md)
+- [0010: React question UI](docs/adr/0010-react-question-ui.md)
