@@ -1,22 +1,38 @@
-# Enterprise Policy & Document Copilot
+# Enterprise Policy Copilot
 
-Small FastAPI service for answering employee policy questions from documents stored in Postgres.
+Local MVP for asking source-supported questions against a small enterprise policy
+document set.
 
-v0.9.0 indexes local Markdown, text, and readable PDF files from `documents/`
-into Postgres tables for document records and document chunks. Each stored chunk
-includes a deterministic local embedding vector for pgvector-backed retrieval.
-The `/ask` endpoint reads stored chunks from Postgres, uses vector retrieval
-with deterministic keyword matching as a fallback, and returns answers only when
-the stored document set supports the question.
+The backend indexes local Markdown, text, and readable PDF documents from
+`documents/` into Postgres. Stored chunks include deterministic local embedding
+vectors for pgvector retrieval, with keyword retrieval as a fallback. The
+FastAPI `/ask` endpoint returns an answer only when the indexed document set
+supports the question. Unsupported questions return a refusal response.
 
-Supported answers include citations with `document_id`, `title`, `chunk_id`,
-`category`, optional provenance metadata, and `snippet`. Unsupported questions
-return a refusal response. The React/Vite frontend in `frontend/` provides the
-browser UI for asking questions against `/ask`. The local embedding provider is
-deterministic and dependency-free; it is not an external model embedding
-service.
+The frontend in `frontend/` is a Vite, React, TypeScript, and Tailwind UI for
+asking questions and reviewing cited source snippets. The app does not generate
+answers with an external model.
 
-## Docker Compose Local Runtime
+Current version: `1.0.0`
+
+## Repository Structure
+
+```text
+app/                 FastAPI backend, indexing command, data access, retrieval
+documents/           Local sample documents used as indexing input
+docs/adr/            Architecture decision records
+docs/demo-script.md  Short walkthrough for showing the local MVP
+frontend/            Vite React frontend
+tests/               Backend tests
+docker-compose.yml   Local Postgres with pgvector and FastAPI runtime
+Dockerfile           Backend container image
+pyproject.toml       Python package metadata and dev dependencies
+```
+
+## Run With Docker Compose
+
+Docker Compose is the simplest local path because it starts Postgres with
+pgvector and the FastAPI backend together.
 
 Build and start the local runtime:
 
@@ -24,10 +40,10 @@ Build and start the local runtime:
 docker compose up --build
 ```
 
-In a second terminal, index local documents into the runtime database:
+In a second terminal, index the local documents into the Compose database:
 
 ```bash
-docker compose run --rm api_service python -m app.commands.index_documents --documents-path documents
+docker compose run --rm api_service policy-copilot-index-documents --documents-path documents
 ```
 
 The API runs at `http://127.0.0.1:8000`.
@@ -46,15 +62,15 @@ curl -s -X POST http://127.0.0.1:8000/ask \
   -d '{"question":"What is the password rotation policy?"}'
 ```
 
-The Compose app container uses the runtime database:
+Ask an unsupported question:
 
-```text
-DATABASE_URL=postgresql://postgres:postgres@postgres_service:5432/policy_copilot
+```bash
+curl -s -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question":"What is the cafeteria menu today?"}'
 ```
 
-In v0.9.0, the Compose Postgres service uses a pgvector-enabled image. Postgres
-data is stored in the persistent `postgres_data` volume. Re-run the indexing
-command after changing files in `documents/`.
+Re-run the indexing command after changing files in `documents/`.
 
 Stop the services:
 
@@ -62,62 +78,13 @@ Stop the services:
 docker compose down
 ```
 
-## Local Setup
+To remove the persisted local database volume:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+docker compose down --volumes
 ```
-
-## Local Postgres Setup
-
-Start a local Postgres that has pgvector installed, create the local database,
-and point the app at it:
-
-```bash
-sudo service postgresql start
-sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
-sudo -u postgres createdb policy_copilot
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot"
-```
-
-This `DATABASE_URL` is for running the app locally against the runtime database.
-The database must have the pgvector extension available because schema creation
-enables `vector` and stores `chunk_embedding` values. The Docker Compose runtime
-above is the simplest pgvector-enabled local setup.
-
-Create the schema and index local documents into Postgres:
-
-```bash
-python -m app.data.schema
-python -m app.commands.index_documents --documents-path documents
-```
-
-The installed console command is also available:
-
-```bash
-policy-copilot-index-documents --documents-path documents
-```
-
-## Running the API
-
-```bash
-python -m uvicorn app.main:app --reload
-```
-
-The API runs at `http://127.0.0.1:8000`.
-
-Available endpoints:
-
-- `GET /health`
-- `POST /ask`
 
 ## Frontend Development
-
-The browser UI lives in `frontend/` and uses Vite, React, TypeScript, and
-Tailwind.
 
 Install frontend dependencies:
 
@@ -126,14 +93,15 @@ cd frontend
 npm install
 ```
 
-Run the frontend dev server while FastAPI is running on port 8000:
+Run the frontend while FastAPI is running on port `8000`:
 
 ```bash
 npm run dev
 ```
 
-The Vite dev server proxies `/ask` and `/health` to `http://127.0.0.1:8000`.
-Set `VITE_API_BASE_URL` only if the API is running somewhere else.
+The Vite dev server runs at `http://127.0.0.1:5173` and proxies `/ask` and
+`/health` to `http://127.0.0.1:8000`. Set `VITE_API_BASE_URL` only if the API is
+running somewhere else.
 
 Build static frontend assets:
 
@@ -141,42 +109,50 @@ Build static frontend assets:
 npm run build
 ```
 
-Request:
+## Python Local Setup
 
-```json
-{
-  "question": "What is the password rotation policy?"
-}
+Use this path if you want to run the backend outside Docker. The database still
+needs Postgres with pgvector available.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
 ```
 
-Response:
+Point the app at a local Postgres database:
 
-```json
-{
-  "answer": "Employees must rotate passwords every 90 days.",
-  "supported": true,
-  "citations": [
-    {
-      "document_id": "it-password-policy",
-      "chunk_id": "it-password-policy-password-rotation",
-      "title": "IT Password Policy",
-      "category": "information-security",
-      "owner": "IT Security",
-      "source_date": "2026-01-15",
-      "document_version": "2026.1",
-      "snippet": "Employees must rotate passwords every 90 days."
-    }
-  ],
-  "refusal_reason": null
-}
+```bash
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot"
 ```
+
+Create the schema and index local documents:
+
+```bash
+python -m app.data.schema
+python -m app.commands.index_documents --documents-path documents
+```
+
+Run the API:
+
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+Available endpoints:
+
+- `GET /health`
+- `POST /ask`
 
 ## Local Documents
 
-Policy files live in `documents/` as `.md`, `.txt`, or `.pdf` files. These files are
-indexing input; `/ask` reads the stored chunks from Postgres after indexing.
+Policy files live in `documents/` as `.md`, `.txt`, or readable `.pdf` files.
+These files are indexing input. The `/ask` endpoint reads stored chunks from
+Postgres after indexing.
 
-Each file uses a small metadata header followed by `##` chunk headings:
+Markdown and text files use a small metadata header followed by `##` chunk
+headings:
 
 ```md
 ---
@@ -193,100 +169,33 @@ document_version: 2026.1
 Employees must rotate passwords every 90 days.
 ```
 
-Each `##` section becomes one stored document chunk. The chunk citation snippet
-and answer come from the first paragraph under that heading. Chunk IDs are
-derived from the document ID and heading, such as
-`it-password-policy-password-rotation`. The indexing command also stores a
-`chunk_embedding` vector for each chunk.
+Each `##` section becomes one stored document chunk. Chunk IDs are derived from
+the document ID and heading, such as
+`it-password-policy-password-rotation`.
 
-PDF files must contain readable embedded text. The extracted PDF text uses the same
-metadata and `##` heading format as Markdown and text files.
-
-## Example `/ask` Requests
-
-Supported question:
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"What is the password rotation policy?"}'
-```
-
-```json
-{
-  "answer": "Employees must rotate passwords every 90 days.",
-  "supported": true,
-  "citations": [
-    {
-      "document_id": "it-password-policy",
-      "chunk_id": "it-password-policy-password-rotation",
-      "title": "IT Password Policy",
-      "category": "information-security",
-      "owner": "IT Security",
-      "source_date": "2026-01-15",
-      "document_version": "2026.1",
-      "snippet": "Employees must rotate passwords every 90 days."
-    }
-  ],
-  "refusal_reason": null
-}
-```
-
-Unsupported question:
-
-```bash
-curl -s -X POST http://127.0.0.1:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"What is the cafeteria menu today?"}'
-```
-
-```json
-{
-  "answer": "I cannot answer this question from the current document set.",
-  "supported": false,
-  "citations": [],
-  "refusal_reason": "Unsupported by available documents."
-}
-```
+PDF files must contain readable embedded text. Extracted PDF text is parsed with
+the same metadata and `##` heading format.
 
 ## Quality Checks
 
-Run quick local checks:
+Backend checks:
 
 ```bash
 python -m ruff check .
 python -m ruff format --check .
 python -m pytest -q
 python -m bandit -q -r app
-python -m pip_audit --skip-editable
+python -m pip_audit --skip-editable .
 ```
 
-`python -m pytest -q` is a quick local check. It may skip database-backed tests
-when `DATABASE_URL` is not set.
-
-### Test Database
-
-Run the full database-backed test suite against a dedicated test database:
+Frontend check:
 
 ```bash
-docker compose up -d postgres_service
-docker compose exec postgres_service dropdb -U postgres --if-exists policy_copilot_test
-docker compose exec postgres_service createdb -U postgres policy_copilot_test
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/policy_copilot_test" python -m pytest -q -rs
+cd frontend
+npm run build
 ```
 
-Use `policy_copilot_test` for full database-backed tests. Do not run tests
-against the `policy_copilot` runtime database. The Compose `postgres_service`
-container includes pgvector for these tests.
+## Demo
 
-## Architecture Decision Records
-
-- [0001: v1 deterministic retrieval](docs/adr/0001-v1-deterministic-retrieval.md)
-- [0002: v2 document chunks](docs/adr/0002-v2-document-chunks.md)
-- [0003: local document ingestion](docs/adr/0003-local-document-ingestion.md)
-- [0004: PDF ingestion](docs/adr/0004-pdf-ingestion.md)
-- [0005: quality gates before database work](docs/adr/0005-quality-gates-before-database-work.md)
-- [0006: Postgres document persistence](docs/adr/0006-postgres-document-persistence.md)
-- [0007: Docker Compose local runtime](docs/adr/0007-docker-compose-local-runtime.md)
-- [0008: pgvector semantic retrieval](docs/adr/0008-pgvector-semantic-retrieval.md)
-- [0010: React question UI](docs/adr/0010-react-question-ui.md)
+Use [docs/demo-script.md](docs/demo-script.md) for a short local walkthrough with
+sample questions and expected outcomes.

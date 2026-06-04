@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from app.services.ingestion import (
+    DEFAULT_DOCUMENTS_PATH,
     chunk_local_document,
     extract_pdf_text,
     load_document_catalog,
@@ -59,6 +60,21 @@ Employees must provide receipts for reimbursable expenses over $25.
     assert document_catalog[1].owner == "People Operations"
     assert document_catalog[1].source_date == "2026-01-15"
     assert document_catalog[1].document_version == "2026.1"
+
+
+def test_default_it_password_policy_includes_citation_metadata() -> None:
+    local_document = load_local_document(DEFAULT_DOCUMENTS_PATH / "it-password-policy.md")
+    document_chunks = chunk_local_document(local_document)
+
+    account_compromise_chunk = next(
+        chunk
+        for chunk in document_chunks
+        if chunk.chunk_id == "it-password-policy-account-compromise"
+    )
+
+    assert account_compromise_chunk.owner == "IT Security"
+    assert account_compromise_chunk.source_date == "2026-01-15"
+    assert account_compromise_chunk.document_version == "2026.1"
 
 
 def test_chunk_local_document_creates_chunks_from_headings(tmp_path: Path) -> None:

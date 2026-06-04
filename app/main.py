@@ -15,7 +15,7 @@ from app.services.retrieval import (
 
 app = FastAPI(
     title="Enterprise Policy Copilot API",
-    version="0.9.0",
+    version="1.0.0",
     description="Document retrieval API for answering questions from the current enterprise document set.",
     openapi_tags=[
         {

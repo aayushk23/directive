@@ -245,7 +245,7 @@ async def test_openapi_uses_api_title() -> None:
     assert response.status_code == 200
     openapi_info = response.json()["info"]
     assert openapi_info["title"] == "Enterprise Policy Copilot API"
-    assert openapi_info["version"] == "0.9.0"
+    assert openapi_info["version"] == "1.0.0"
 
 
 async def test_openapi_routes_use_explicit_tags() -> None:
