@@ -64,7 +64,7 @@ function citationItems(citations: Citation[]): CitationItem[] {
 
 function requestErrorMessage(error: unknown) {
   if (error instanceof AskNetworkError) {
-    return "The policy API is unavailable. Check that it is running, then retry."
+    return "The policy API is unavailable. Start the FastAPI backend, then retry."
   }
 
   if (error instanceof AskMalformedResponseError) {

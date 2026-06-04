@@ -10,8 +10,8 @@ export function EmptyAnswer() {
         <div>
           <p className="text-sm font-semibold">Ready for a policy question</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Results appear here with a support decision, answer text, and source
-            snippets in the same workspace.
+            After the local documents are indexed, results appear here with a
+            support decision, answer text, and source snippets.
           </p>
           <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
             {["Ask", "Check support", "Review snippets"].map((item) => (
