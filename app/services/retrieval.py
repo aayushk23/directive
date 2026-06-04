@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from psycopg import Connection
 
-from app.data.document_store import load_document_chunks
+from app.data.document_store import document_chunk_from_row, load_document_chunks
 from app.services.embedding_provider import (
     EmbeddingProvider,
     LocalHashEmbeddingProvider,
@@ -85,6 +85,7 @@ def _retrieve_vector_supported_chunk(
             d.owner,
             d.source_date,
             d.document_version,
+            d.source_file,
             c.chunk_text,
             c.answer,
             c.citation_snippet,
@@ -104,23 +105,11 @@ def _retrieve_vector_supported_chunk(
         ),
     ).fetchone()
 
-    if row is None or not math.isfinite(row[11]) or row[11] < MINIMUM_VECTOR_SIMILARITY:
+    if row is None or not math.isfinite(row[12]) or row[12] < MINIMUM_VECTOR_SIMILARITY:
         return RetrievalResult(chunk=None)
 
     return RetrievalResult(
-        chunk=DocumentChunk(
-            chunk_id=row[0],
-            document_id=row[1],
-            title=row[2],
-            category=row[3],
-            owner=row[4],
-            source_date=row[5],
-            document_version=row[6],
-            chunk_text=row[7],
-            answer=row[8],
-            citation_snippet=row[9],
-            keywords=tuple(row[10]),
-        )
+        chunk=document_chunk_from_row(row[:-1])
     )
 
 

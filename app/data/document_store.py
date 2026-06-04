@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from psycopg import Connection
 
 from app.services.embedding_provider import vector_literal
-from app.services.ingestion import DocumentChunk, LocalDocument
+from app.services.ingestion import DocumentChunk, LocalDocument, load_local_document
 
 
 def replace_document_chunks(
@@ -86,6 +88,7 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
             d.owner,
             d.source_date,
             d.document_version,
+            d.source_file,
             c.chunk_text,
             c.answer,
             c.citation_snippet,
@@ -97,21 +100,51 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
     ).fetchall()
 
     return tuple(
-        DocumentChunk(
-            chunk_id=row[0],
-            document_id=row[1],
-            title=row[2],
-            category=row[3],
-            owner=row[4],
-            source_date=row[5],
-            document_version=row[6],
-            chunk_text=row[7],
-            answer=row[8],
-            citation_snippet=row[9],
-            keywords=tuple(row[10]),
-        )
+        document_chunk_from_row(row)
         for row in rows
     )
+
+
+def document_chunk_from_row(row: tuple) -> DocumentChunk:
+    owner = row[4]
+    source_date = row[5]
+    document_version = row[6]
+
+    if owner is None or source_date is None or document_version is None:
+        metadata = _metadata_from_source_file(row[7])
+        owner = owner or metadata.owner
+        source_date = source_date or metadata.source_date
+        document_version = document_version or metadata.document_version
+
+    return DocumentChunk(
+        chunk_id=row[0],
+        document_id=row[1],
+        title=row[2],
+        category=row[3],
+        owner=owner,
+        source_date=source_date,
+        document_version=document_version,
+        chunk_text=row[8],
+        answer=row[9],
+        citation_snippet=row[10],
+        keywords=tuple(row[11]),
+    )
+
+
+def _metadata_from_source_file(source_file: str) -> LocalDocument:
+    try:
+        return load_local_document(Path(source_file))
+    except (OSError, ValueError):
+        return LocalDocument(
+            document_id="",
+            title="",
+            category="",
+            owner=None,
+            source_date=None,
+            document_version=None,
+            source_file=Path(source_file),
+            text="",
+        )
 
 
 def _chunk_embedding_literal(
