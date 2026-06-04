@@ -108,9 +108,7 @@ def _retrieve_vector_supported_chunk(
     if row is None or not math.isfinite(row[12]) or row[12] < MINIMUM_VECTOR_SIMILARITY:
         return RetrievalResult(chunk=None)
 
-    return RetrievalResult(
-        chunk=document_chunk_from_row(row[:-1])
-    )
+    return RetrievalResult(chunk=document_chunk_from_row(row[:-1]))
 
 
 def _score_chunk(normalized_question: str, chunk: DocumentChunk) -> int:

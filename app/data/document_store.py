@@ -99,10 +99,7 @@ def load_document_chunks(connection: Connection) -> tuple[DocumentChunk, ...]:
         """
     ).fetchall()
 
-    return tuple(
-        document_chunk_from_row(row)
-        for row in rows
-    )
+    return tuple(document_chunk_from_row(row) for row in rows)
 
 
 def document_chunk_from_row(row: tuple) -> DocumentChunk:
