@@ -23,4 +23,3 @@ def test_document_chunk_from_row_restores_missing_source_metadata() -> None:
     assert document_chunk.owner == "IT Security"
     assert document_chunk.source_date == "2026-01-15"
     assert document_chunk.document_version == "2026.1"
-

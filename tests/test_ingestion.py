@@ -63,7 +63,9 @@ Employees must provide receipts for reimbursable expenses over $25.
 
 
 def test_default_it_password_policy_includes_citation_metadata() -> None:
-    local_document = load_local_document(DEFAULT_DOCUMENTS_PATH / "it-password-policy.md")
+    local_document = load_local_document(
+        DEFAULT_DOCUMENTS_PATH / "it-password-policy.md"
+    )
     document_chunks = chunk_local_document(local_document)
 
     account_compromise_chunk = next(
