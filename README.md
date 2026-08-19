@@ -1,4 +1,4 @@
-# Enterprise Policy Copilot
+# Directive
 
 Local MVP for asking source-supported questions against a small enterprise policy
 document set.
